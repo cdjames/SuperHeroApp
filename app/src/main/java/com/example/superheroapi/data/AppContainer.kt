@@ -33,15 +33,16 @@ interface AppContainer {
  *
  * Variables are initialized lazily and the same instance is shared across the whole app.
  */
-class DefaultAppContainer : AppContainer {
-    private val baseUrl = "https://android-kotlin-fun-mars-server.appspot.com/"
 
+const val BASE_URL = "https://superheroapi.com/api/"
+
+class DefaultAppContainer : AppContainer {
     /**
      * Use the Retrofit builder to build a retrofit object using a kotlinx.serialization converter
      */
     private val retrofit: Retrofit = Retrofit.Builder()
         .addConverterFactory(Json.asConverterFactory("application/json".toMediaType()))
-        .baseUrl(baseUrl)
+        .baseUrl(BASE_URL)
         .build()
 
     /**
@@ -51,9 +52,6 @@ class DefaultAppContainer : AppContainer {
         retrofit.create(SuperHeroApiService::class.java)
     }
 
-    /**
-     * DI implementation for Mars photos repository
-     */
     override val superHeroRepo: SuperHeroRepository by lazy {
         SuperHeroNetworkRepo(retrofitService)
     }

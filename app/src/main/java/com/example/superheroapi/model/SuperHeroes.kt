@@ -6,15 +6,15 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SuperHero(
     val response: String? = null,
-    val id: String,
-    val name: String,
+    val id: String = "",
+    val name: String = "",
     @SerialName("powerstats")
     val powerStats: PowerStats? = null,
     val biography: Biography? = null,
     val appearance: Appearance? = null,
     val work: Work? = null,
     val connections: Connections? = null,
-    val image: Image
+    val image: Image = Image("")
 )
 
 @Serializable
@@ -30,7 +30,6 @@ data class PowerStats(
     val intelligence: String,
     val strength: String,
     val speed: String,
-    val aliases: List<String>,
     val durability: String,
     val power: String,
     val combat: String,
@@ -57,7 +56,9 @@ data class Appearance(
     val race: String,
     val height: List<String>,
     val weight: List<String>,
+    @SerialName("eye-color")
     val eyeColor: String,
+    @SerialName("hair-color")
     val hairColor: String,
 )
 
@@ -69,6 +70,7 @@ data class Work(
 
 @Serializable
 data class Connections(
+    @SerialName("group-affiliation")
     val groupAffiliation: String,
     val relatives: String
 )

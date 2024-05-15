@@ -1,5 +1,6 @@
 package com.example.superheroapi.ui.viewmodels
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,31 +24,10 @@ sealed interface SuperHeroUiState {
     data object Error : SuperHeroUiState
 }
 
-sealed interface SuperHeroSearchUiState {
-    data class Success(val result: SuperHeroSearch) : SuperHeroSearchUiState
-    data object Loading : SuperHeroSearchUiState
-    data object Error : SuperHeroSearchUiState
-}
-
 class SuperHeroViewModel(private val superHeroRepository: SuperHeroRepository) : ViewModel() {
     var superHeroUiState: SuperHeroUiState by mutableStateOf(SuperHeroUiState.Loading)
         private set
-    var superHeroSearchUiState: SuperHeroSearchUiState by mutableStateOf(SuperHeroSearchUiState.Loading)
-        private set
     private val apiKey = BuildConfig.API_KEY
-
-    fun searchHero(name: String) {
-        viewModelScope.launch {
-            superHeroSearchUiState = try {
-                val result = superHeroRepository.searchHero(apiKey, name)
-                SuperHeroSearchUiState.Success(result)
-            } catch (e: IOException) {
-                SuperHeroSearchUiState.Error
-            } catch (e: HttpException) {
-                SuperHeroSearchUiState.Error
-            }
-        }
-    }
 
     fun getHero(id: String) {
         viewModelScope.launch {
@@ -55,16 +35,18 @@ class SuperHeroViewModel(private val superHeroRepository: SuperHeroRepository) :
                 val result = superHeroRepository.getHero(apiKey, id) //TODO
                 SuperHeroUiState.Success(result)
             } catch (e: IOException) {
+                // I added a Log statement here and in the catch block below to help troubleshoot
+                // it printed an Error 404 to the Log, which helped me realize you forgot to change the
+                // URL from the network interface you copied and pasted
+                Log.d("error", e.toString())
                 SuperHeroUiState.Error
             } catch (e: HttpException) {
+                Log.d("error", e.toString())
                 SuperHeroUiState.Error
             }
         }
     }
 
-    /**
-     * Factory for [MarsViewModel] that takes [MarsPhotosRepository] as a dependency
-     */
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
