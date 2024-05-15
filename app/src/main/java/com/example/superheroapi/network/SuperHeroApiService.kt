@@ -30,10 +30,4 @@ interface SuperHeroApiService {
         @Path("apiKey") apiKey: String,
         @Path("id") id: String
     ): SuperHero
-
-    @GET("{apiKey}/search/{name}")
-    suspend fun searchHero(
-        @Path("apiKey") apiKey: String,
-        @Path("name") name: String
-    ): SuperHeroSearch
 }

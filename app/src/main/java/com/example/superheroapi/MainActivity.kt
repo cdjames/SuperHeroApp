@@ -16,10 +16,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,14 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.superheroapi.model.Image
 import com.example.superheroapi.model.SuperHero
-import com.example.superheroapi.model.SuperHeroSearch
 import com.example.superheroapi.ui.theme.SuperHeroAPITheme
-import com.example.superheroapi.ui.viewmodels.SuperHeroSearchUiState
 import com.example.superheroapi.ui.viewmodels.SuperHeroUiState
 import com.example.superheroapi.ui.viewmodels.SuperHeroViewModel
 
 val hero = SuperHero("hi", "1234", "Batman", image = Image("http://hero.com"))
-val search = SuperHeroSearch("hi", hero.name, listOf(hero))
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,23 +56,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun SuperHero(hero: SuperHero,
-              searchMethod: (name: String) -> SuperHeroSearch,
-              getMethod: (id: String) -> SuperHero,
-              modifier: Modifier = Modifier) {
-    Scaffold(
-        topBar = { SearchField(modifier.padding(bottom = 8.dp)) },
-        bottomBar = {},
-        modifier = modifier.padding(start = 8.dp, end = 8.dp)
-    ) {
-        SuperHeroCard(
-            hero = hero,
-            modifier = modifier
-                .padding(it)
-                .padding(bottom = 8.dp)
+fun SuperHeroScreen(
+    modifier: Modifier = Modifier,
+    uiState: SuperHeroUiState,
+    getMethod: (id: String) -> Unit,
+) {
+    Column {
+        SearchField(
+            modifier = modifier.padding(bottom = 8.dp),
+            getMethod = { input -> getMethod(input) }, // the "input" parameter can be given any name you want
         )
+        when (uiState) {
+            is SuperHeroUiState.Success -> {
+
+                SuperHeroCard(
+                    hero = uiState.hero,
+                    modifier = modifier
+                        .padding(bottom = 8.dp)
+                )
+            }
+
+            SuperHeroUiState.Error ->
+                Text(text = "Error")
+
+            SuperHeroUiState.Loading ->
+                Text(text = "Loading")
+        }
     }
 }
+
 
 @Composable
 fun SuperHeroVM(
@@ -80,23 +92,26 @@ fun SuperHeroVM(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     superHeroViewModel: SuperHeroViewModel = viewModel(factory = SuperHeroViewModel.Factory)
 ) {
-    when (val state = superHeroViewModel.superHeroUiState) {
-        is SuperHeroUiState.Success -> SuperHero(state.hero, modifier)
-        is SuperHeroUiState.Loading -> Text(text = "Loading")
-        is SuperHeroUiState.Error -> Text(text = "Error")
-    }
+    val state = superHeroViewModel.superHeroUiState
+    SuperHeroScreen(
+        getMethod = { input -> superHeroViewModel.getHero(input) },
+        modifier = modifier,
+        uiState = state
+    )
 }
 
 @Composable
 fun SearchField(
     modifier: Modifier = Modifier,
-    searchMethod: (name: String) -> SuperHeroSearch,
-    getMethod: (id: String) -> SuperHero
+    getMethod: (id: String) -> Unit
 ) {
+    var text by remember {
+        mutableStateOf("")
+    }
     Row(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
-            value = "",
-            onValueChange = { },
+            value = text,
+            onValueChange = { text = it },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             label = { Text(text = "Search") },
             colors = OutlinedTextFieldDefaults.colors(
@@ -114,7 +129,7 @@ fun SearchField(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(start = 8.dp, top = 8.dp),
-            onClick = { searchMethod() },
+            onClick = { getMethod(text) },
             shape = MaterialTheme.shapes.small,
 //            contentPadding = PaddingValues(start = 0.dp, end = 0.dp)
         ) {
@@ -141,8 +156,20 @@ fun SuperHeroCard(hero: SuperHero, modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-fun SuperHeroPreview() {
+fun SuperHeroSuccessPreview() {
     SuperHeroAPITheme {
-        SuperHero(hero)
+        SuperHeroScreen(
+            uiState = SuperHeroUiState.Success(hero),
+            getMethod = {})
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SuperHeroLoadingPreview() {
+    SuperHeroAPITheme {
+        SuperHeroScreen(
+            uiState = SuperHeroUiState.Loading,
+            getMethod = {})
     }
 }
